@@ -1,0 +1,1 @@
+GENIE model configurations that take the DUNE DIRTII/NUIWG2 tune developed and alter the final state interaction model of AR23_20i_00_000 tune to 20j (hN2018), 20k (INCL++), and 20l (Geant4). INCL++ and Geant4 integrated into GENIE by GENIE for v3.2+.
