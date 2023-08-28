@@ -13,4 +13,9 @@ To run with hA2018 and hN2018: source setupGENIEv34.sh
 To run with Geant4: source setupGENIEv34Geant.sh
 to run with INCL++: source setupGENIEv34INCL.sh
 
+Some neutrino interaction scattering has been created and posted to dunegpvms. Please contact me (rdiurba@fnal.gov) if you do not have access to them.
+
+Location:
+ProtoDUNE-ND on Argon: /pnfs/dune/persistent/users/rdiurba/2x2_RHC_gst
+DUNE ND on Argon: /pnfs/dune/persistent/users/rdiurba/DUNEND_FHC_numu_gst
 
