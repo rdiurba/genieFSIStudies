@@ -71,7 +71,7 @@ def linearPlotSigmaEnergy(probe,tgt,index,typ,thresh=0):
     plt.ylim(-10,10)
     if (typ=="Sum"): plt.ylim(0,20)
     plt.ylabel(ylabel)
-    plt.savefig("linearPlotKEValue_"+str(indexStr)+"_"+str(probe)+"_"+str(tgt)+"_"+str(typ)+"_"+str(threshStr)+".pdf")
+    plt.savefig("linearPlotKEValueStd_"+str(indexStr)+"_"+str(probe)+"_"+str(tgt)+"_"+str(typ)+"_"+str(threshStr)+".pdf")
 
     plt.show()
 def linearPlotEnergy(probe,tgt,index,typ,thresh=0):
@@ -205,7 +205,7 @@ def linearPlotSigmaTarget(probe,ke,index,tgt,typ,thresh=0):
     plt.ylim(-10,10)
     if (typ=="Sum"): plt.ylim(0,20)
     plt.legend(loc="lower right")
-    plt.savefig("linearPlotAValue_"+str(indexStr)+"_"+str(probe)+"_"+str(ke)+"GeV_"+str(typ)+"_"+str(threshStr)+".pdf")
+    plt.savefig("linearPlotAValueStd_"+str(indexStr)+"_"+str(probe)+"_"+str(ke)+"GeV_"+str(typ)+"_"+str(threshStr)+".pdf")
     plt.show()
 probes=[211]
 indexes=[0,1,2,3]

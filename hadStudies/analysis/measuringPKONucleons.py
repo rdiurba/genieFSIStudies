@@ -85,7 +85,7 @@ def linearPlotSigmaEnergy(probe,tgt,index,typ,thresh=0):
     plt.plot(ke,simVal,"--", label="hA2018 Underlying Model")
     plt.legend(loc="lower right")
     plt.ylabel(ylabel)
-    plt.savefig("linearPlotKEValue_"+str(probe)+"_"+str(tgt)+"_"+str(typ)+"_"+str(threshStr)+".pdf")
+    plt.savefig("linearPlotKEValueStd_"+str(probe)+"_"+str(tgt)+"_"+str(typ)+"_"+str(threshStr)+".pdf")
 
     plt.show()
 def linearPlotGammaEnergy(probe,tgt,index,typ,thresh=0):
@@ -255,7 +255,7 @@ def linearPlotSigmaTarget(probe,ke,index,tgt,typ,thresh=0):
     plt.ylabel(ylabel)
     plt.ylim(-7,7)
     plt.legend(loc="lower right")
-    plt.savefig("linearPlotAValue_"+str(probe)+"_"+str(ke)+"GeV_"+str(typ)+"_"+str(threshStr)+".pdf")
+    plt.savefig("linearPlotAValueStd_"+str(probe)+"_"+str(ke)+"GeV_"+str(typ)+"_"+str(threshStr)+".pdf")
     plt.show()
     
 def linearPlotGammaTarget(probe,ke,index,tgt,typ,thresh=0):
