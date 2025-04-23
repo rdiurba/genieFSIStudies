@@ -30,14 +30,59 @@ std::string deuteronCut="np==2 && nn==0";
 if (probe==111) deuteronCut="np==1 && nn==1";
 if (probe==-211) deuteronCut="np==0 && nn==2";
   deuteronCut="np<0"; 
-  if (label=="20i") t->Project(Form("hist_Mult%s",label.c_str()),"np-nn",Form("probe_fsi==5 && !(%s)",deuteronCut.c_str()));
-   else t->Project(Form("hist_Mult%s",label.c_str()),"np-nn",Form("probe_fsi==5 && !(%s)",deuteronCut.c_str()));
+  //if (label=="20i") t->Project(Form("hist_Mult%s",label.c_str()),"np-nn",Form("probe_fsi==5 && !(%s)",deuteronCut.c_str()));
+   //else t->Project(Form("hist_Mult%s",label.c_str()),"np-nn",Form("probe_fsi==5 && !(%s)",deuteronCut.c_str()));
+   //return hist_Mult;
+
+       
+   double mk=0.4937; double mp=0.9383; double mpi=0.1396; double mmu=0.1057;
+   int pdgf[100]; int nf; double Ef[100];
+   int fspl; double El; int probe_fsi;
+   int numEvents=t->GetEntries();
+   t->SetBranchAddress("pdgh",&pdgf);
+   t->SetBranchAddress("nh",&nf);
+   t->SetBranchAddress("Eh",&Ef);
+   t->SetBranchAddress("probe_fsi",&probe_fsi);
+   Double_t weights20iP[100];
+   Double_t weights20iPi[100];
+   //t_weights->SetBranchAddress("tweak_responses_FSI_pi_VariationResponse",&weights20iPi);
+   //t_weights->SetBranchAddress("tweak_responses_FSI_N_VariationResponse",&weights20iP);
+   for (Long64_t j=0;j<numEvents;j++){
+   int mult=0; t->GetEntry(j); // t_weights->GetEntry(j);
+   if(probe_fsi!=5) continue;
+   for(int i=0; i<nf; i++){
+
+   //if (abs(pdgf[i])==211 && Ef[i]-mpi>threshPi.at(thresh)) mult++;
+   //if (abs(pdgf[i])==321 && Ef[i]-mk>threshK.at(thresh)) mult++;
+   if (abs(pdgf[i])==2212 && Ef[i]-mp>0.02) mult++;
+   if (abs(pdgf[i])==2112 && Ef[i]-mp>0.02) mult=mult-1;
+   //if (abs(pdgf[i])==13 && Ef[i]-mmu>threshMu.at(thresh)) mult++;
+   }
+   //if (abs(fspl)==13 && El-mmu>threshMu.at(thresh)) mult++;
+    hist_Mult->Fill(mult);
+   }
+
+
+
    return hist_Mult;
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 
 
-void plotAbsDiff(int probe=211, double ke=0.125, int target=1000822080)
+void plotAbsDiffThresh(int probe=211, double ke=0.125, int target=1000822080)
 {
 std::string probeStr="piPlus";
 if (probe==-211) probeStr="piMinus";
@@ -90,7 +135,7 @@ TH1D* mult20l=makeHistogram(t_nu20l,"20l",probe);
    mult20k->SetLineColor(kBlue);
    std::string label="0 mm";
    mult20i->SetTitle(Form("Number of Nucleons in Pion Absorption"));
-   mult20i->GetXaxis()->SetTitle("N_{p}-N_{n}");
+   mult20i->GetXaxis()->SetTitle("N_{p}-N_{n} (KE Thresh. of 20 MeV)");
    mult20i->GetYaxis()->SetTitle("Fraction of Events");
    gPad->SetLeftMargin(0.15);
    mult20i->GetYaxis()->SetRangeUser(0,0.8);
@@ -127,7 +172,8 @@ TH1D* mult20l=makeHistogram(t_nu20l,"20l",probe);
    mult20k->Draw("HIST SAME");
    mult20l->Draw("HIST SAME");
    lErr->Draw("SAME");
-   c1->Print(Form("nucleonDiffPionAbs_%s_%s_%d.pdf",probeStr.c_str(),keStr.c_str(),target));
+   c1->Print(Form("nucleonThreshDiffPionAbs_%s_%s_%d.png",probeStr.c_str(),keStr.c_str(),target));
+      c1->Print(Form("nucleonThreshDiffPionAbs_%s_%s_%d.pdf",probeStr.c_str(),keStr.c_str(),target));
    TF1* g1=new TF1("g1","gaus",-20,20);
    TF1* g2=new TF1("g2","gaus",-20,20);
    TF1* g3=new TF1("g3","gaus",-20,20);
@@ -137,7 +183,7 @@ TH1D* mult20l=makeHistogram(t_nu20l,"20l",probe);
    mult20k->Fit(g3);
    mult20l->Fit(g4);
 std::ofstream file;
-file.open("pionAbsDifference.txt",std::ios_base::app);
+file.open("pionAbsDifferenceThresh.txt",std::ios_base::app);
 file<<probe<<","<<ke<<","<<target<<","<<g1->GetParameter(1)<<","<<g1->GetParError(1)<<","<<g1->GetParameter(2)<<","<<g1->GetParError(2)<<","<<g2->GetParameter(1)<<","<<g2->GetParError(1)<<","<<g2->GetParameter(2)<<","<<g2->GetParError(2)<<","<<g3->GetParameter(1)<<","<<g3->GetParError(1)<<","<<g3->GetParameter(2)<<","<<g3->GetParError(2)<<","<<g4->GetParameter(1)<<","<<g4->GetParError(1)<<","<<g4->GetParameter(2)<<","<<g4->GetParError(2)<<std::endl;
 file.clear();
 

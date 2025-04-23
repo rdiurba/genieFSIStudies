@@ -57,14 +57,14 @@ gStyle->SetOptFit(111);
 
 
    std::cout<<"Loading files"<<std::endl;
-   TFile *f_numu = new TFile(Form("/dune/data/users/rdiurba/genieFSIStudies/%s_%d_%sGeV_hA2018_1M.ginuke.root",probeStr.c_str(),target,keStr.c_str()));
-  TFile *f_nue = new TFile(Form("/dune/data/users/rdiurba/genieFSIStudies/%s_%d_%sGeV_hN2018_1M.ginuke.root",probeStr.c_str(),target,keStr.c_str()));
+   TFile *f_numu = new TFile(Form("/exp/dune/data/users/rdiurba/genieFSIStudies/%s_%d_%sGeV_hA2018_1M.ginuke.root",probeStr.c_str(),target,keStr.c_str()));
+  TFile *f_nue = new TFile(Form("/exp/dune/data/users/rdiurba/genieFSIStudies/%s_%d_%sGeV_hN2018_1M.ginuke.root",probeStr.c_str(),target,keStr.c_str()));
    TTree* t_numu = (TTree*)f_numu->Get("ginuke");
    TTree* t_nu20j = (TTree*)f_nue->Get("ginuke");
 
 
-   TFile *f_numu10b = new TFile(Form("/dune/data/users/rdiurba/genieFSIStudies/%s_%d_%sGeV_HINCL_1M.ginuke.root",probeStr.c_str(),target,keStr.c_str()));
-   TFile *f_nue10b = new TFile(Form("/dune/data/users/rdiurba/genieFSIStudies/%s_%d_%sGeV_HG4BertCasc_1M.ginuke.root",probeStr.c_str(),target,keStr.c_str()));
+   TFile *f_numu10b = new TFile(Form("/exp/dune/data/users/rdiurba/genieFSIStudies/%s_%d_%sGeV_HINCL_1M.ginuke.root",probeStr.c_str(),target,keStr.c_str()));
+   TFile *f_nue10b = new TFile(Form("/exp/dune/data/users/rdiurba/genieFSIStudies/%s_%d_%sGeV_HG4BertCasc_1M.ginuke.root",probeStr.c_str(),target,keStr.c_str()));
    TTree* t_nu20k = (TTree*)f_numu10b->Get("ginuke");
    TTree* t_nu20l = (TTree*)f_nue10b->Get("ginuke");
    std::cout<<"Loaded files"<<std::endl;
@@ -125,7 +125,7 @@ TH1D* mult20l=makeHistogram(t_nu20l,"20l");
    mult20k->Draw("HIST SAME");
    mult20l->Draw("HIST SAME");
    lErr->Draw("SAME");
-   c1->Print(Form("nucleonSumKO_%s_%s_%d.png",probeStr.c_str(),keStr.c_str(),target));
+   c1->Print(Form("nucleonSumKO_%s_%s_%d.pdf",probeStr.c_str(),keStr.c_str(),target));
    TF1* g1=new TF1("g1","expo",0,40);
    TF1* g2=new TF1("g2","expo",0,40);
    TF1* g3=new TF1("g3","expo",0,40);

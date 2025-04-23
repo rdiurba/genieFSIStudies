@@ -60,14 +60,14 @@ gStyle->SetOptFit(111);
 
 
    std::cout<<"Loading files"<<std::endl;
-   TFile *f_numu = new TFile(Form("/dune/data/users/rdiurba/genieFSIStudies/%s_%d_%sGeV_hA2018_1M.ginuke.root",probeStr.c_str(),target,keStr.c_str()));
-  TFile *f_nue = new TFile(Form("/dune/data/users/rdiurba/genieFSIStudies/%s_%d_%sGeV_hN2018_1M.ginuke.root",probeStr.c_str(),target,keStr.c_str()));
+   TFile *f_numu = new TFile(Form("/exp/dune/data/users/rdiurba/genieFSIStudies/%s_%d_%sGeV_hA2018_1M.ginuke.root",probeStr.c_str(),target,keStr.c_str()));
+  TFile *f_nue = new TFile(Form("/exp/dune/data/users/rdiurba/genieFSIStudies/%s_%d_%sGeV_hN2018_1M.ginuke.root",probeStr.c_str(),target,keStr.c_str()));
    TTree* t_numu = (TTree*)f_numu->Get("ginuke");
    TTree* t_nu20j = (TTree*)f_nue->Get("ginuke");
 
 
-   TFile *f_numu10b = new TFile(Form("/dune/data/users/rdiurba/genieFSIStudies/%s_%d_%sGeV_HINCL_1M.ginuke.root",probeStr.c_str(),target,keStr.c_str()));
-   TFile *f_nue10b = new TFile(Form("/dune/data/users/rdiurba/genieFSIStudies/%s_%d_%sGeV_HG4BertCasc_1M.ginuke.root",probeStr.c_str(),target,keStr.c_str()));
+   TFile *f_numu10b = new TFile(Form("/exp/dune/data/users/rdiurba/genieFSIStudies/%s_%d_%sGeV_HINCL_1M.ginuke.root",probeStr.c_str(),target,keStr.c_str()));
+   TFile *f_nue10b = new TFile(Form("/exp/dune/data/users/rdiurba/genieFSIStudies/%s_%d_%sGeV_HG4BertCasc_1M.ginuke.root",probeStr.c_str(),target,keStr.c_str()));
    TTree* t_nu20k = (TTree*)f_numu10b->Get("ginuke");
    TTree* t_nu20l = (TTree*)f_nue10b->Get("ginuke");
    std::cout<<"Loaded files"<<std::endl;
@@ -75,6 +75,8 @@ TH1D* mult20i=makeHistogram(t_numu,"20i",probe);
 TH1D* mult20j=makeHistogram(t_nu20j,"20j",probe);
 TH1D* mult20k=makeHistogram(t_nu20k,"20k",probe);
 TH1D* mult20l=makeHistogram(t_nu20l,"20l",probe);
+
+    std::cout<<mult20l->GetEntries()<<","<<mult20k->GetEntries()<<std::endl;
     mult20i->Scale(1.f/mult20i->GetEntries());  
 
    
@@ -132,7 +134,7 @@ TH1D* mult20l=makeHistogram(t_nu20l,"20l",probe);
    mult20k->Draw("HIST SAME");
    mult20l->Draw("HIST SAME");
    lErr->Draw("SAME");
-   c1->Print(Form("nucleonSumPionAbs_%s_%s_%d.png",probeStr.c_str(),keStr.c_str(),target));
+   c1->Print(Form("nucleonSumPionAbs_%s_%s_%d.pdf",probeStr.c_str(),keStr.c_str(),target));
    TF1* g1=new TF1("g1","gaus",0,40);
    TF1* g2=new TF1("g2","gaus",0,40);
    TF1* g3=new TF1("g3","gaus",0,40);
