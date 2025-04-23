@@ -7,7 +7,7 @@ source /grid/fermiapp/products/dune/setup_dune.sh
 #setup lhapdf v6_3_0 -q e20:p392:prof
 setup dk2nugenie v01_10_01k -q "e20:prof"
 unsetup genie
-setup genie v3_04_00d -q "e20:+inclxx:prof"
+setup genie v3_04_02a -q "e26:inclxx:prof"
 export GXMLPATH=`pwd`/genieTunes:$GXMLPATH
 
 #setup genie v3_04_00 -q "e20:prof"
