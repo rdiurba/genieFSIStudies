@@ -38,7 +38,7 @@ TH2* getHist(std::string simulation, int pdg, std::string particle) { // get his
   const int nummax = 99;
 
 
-    int NuclMultBins=25;
+    int eBiasBins=25;
     Float_t vEdges[26];
     vEdges[0]=-1;
       for (int i = 1; i < 26; ++i){
@@ -58,8 +58,8 @@ TH2* getHist(std::string simulation, int pdg, std::string particle) { // get his
 
     binEdges[0]  = v[0]  - (binEdges[1]  - v[0]);
     binEdges[40] = v[39] + (v[39] - binEdges[39]);
-    //TH2D* h_KEini_NuclMult = new TH2D(Form("%s_%s",simulation.c_str(),particle.c_str()), "NuclMult vs KEini; KEini [GeV]; Relative NuclMult", bins, binEdges, NuclMultBins, vEdges);
-    TH2D* h_KEini_NuclMult = new TH2D(Form("%s_%s_NuclMult", simulation.c_str(), particle.c_str()), Form("%s_%s_NuclMult", simulation.c_str(), particle.c_str()), 40, 0, 2, 40,0,40);
+    //TH2D* h_KEini_Ebias = new TH2D(Form("%s_%s",simulation.c_str(),particle.c_str()), "Ebias vs KEini; KEini [GeV]; Relative Ebias", bins, binEdges, eBiasBins, vEdges);
+    TH2D* h_KEini_Ebias = new TH2D(Form("%s_%s_KEini_vs_Ebias", simulation.c_str(), particle.c_str()), Form("%s_%s_KEini_vs_Ebias", simulation.c_str(), particle.c_str()), 40, 0, 2, 20, -1, 1);
 
     TH2D* hist;
     for (int i=1; i<40; i++){
@@ -193,21 +193,67 @@ TH2* getHist(std::string simulation, int pdg, std::string particle) { // get his
         }
 
 
+      double maxKE = -999;
+      int maxidx = -1;
+      double minKE = 999;
+      int minidx = -1;
+      double Ehad = 0;
+      int ngamma = 0;
+      int nother = 0;
+      for (int idx = 0; idx < nh; ++idx) {
+        double tmpKE = Eh[idx] - mh[idx];
+        if (tmpKE > maxKE) {
+          maxKE = tmpKE;
+          maxidx = idx;
+        }
+        if (tmpKE < minKE) {
+          minKE = tmpKE;
+          minidx = idx;
+        }
+        
+        if (pdgh[idx]==211||pdgh[idx]==-211||pdgh[idx]==111)
+          Ehad += Eh[idx]; // E_pi
+          //Ehad += tmpKE; // KE_pi
+        else if (pdgh[idx]==2212){
+         if (tmpKE>thresh) Ehad += tmpKE;} //KE_p}
+        else if (pdgh[idx]==2112)
+          ;
+        else if (pdgh[idx]==22) {
+          ++ngamma;
+          Ehad += Eh[idx];
+        }
+        else if (pdgh[idx] > 1000000000) {
+                int Z = (pdgh[idx] / 10000) % 1000;
+                int A = (pdgh[idx] / 10)    % 1000;
+                int N = A - Z;
+
+                if (Z > 2)          continue;
+                if (tmpKE <= thresh*A) continue;
+
+
+                 if (compound==true) Ehad += tmpKE;
+            }
+      }
       
       if ( (fsi==5 || fsi==6) && fsi!=7 && KEini>0&&KEini<20) { // selections (e.g. exclusive channel & KE range)
 
 
 
-    
-        //h_NuclMult->Fill(NuclMult);
-        h_KEini_NuclMult->Fill(KEini, mult);
+        
+        double Ebias;
+        if (pdg==2212 || pdg==2112)
+          Ebias = (KEini - Ehad) / KEini;
+        else if (pdg==211 || pdg==111 || pdg==-211)
+          Ebias = (Eini - Ehad) / Eini;
+        //h_Ebias->Fill(Ebias);
+        h_KEini_Ebias->Fill(KEini, Ebias);
       }
     }
 
     }
     
-        normalizePerEnergy(h_KEini_NuclMult);
-  return h_KEini_NuclMult;
+        normalizePerEnergy(h_KEini_Ebias);
+  return h_KEini_Ebias;
 }
 
 void buildTemplate(int pdg=211) {
@@ -232,29 +278,29 @@ void buildTemplate(int pdg=211) {
   TCanvas* cc1 = new TCanvas();
   hA2018_hist->GetZaxis()->SetRangeUser(0,0.5);
   hA2018_hist->Draw("colz");
-  cc1->Print(Form("hA2018_%s_NuclMult.png",particle.c_str()) );
+  cc1->Print(Form("hA2018_%s_Ebias.png",particle.c_str()) );
 
   hN2018_hist->GetZaxis()->SetRangeUser(0,0.5);
   hN2018_hist->Draw("colz");
 
-  cc1->Print(Form("hN2018_%s_NuclMult.png",particle.c_str()) );
+  cc1->Print(Form("hN2018_%s_Ebias.png",particle.c_str()) );
   INCL_hist->GetZaxis()->SetRangeUser(0,0.5);
 
   INCL_hist->Draw("colz");
-  cc1->Print(Form("INCL_%s_NuclMult.png",particle.c_str()) );
+  cc1->Print(Form("INCL_%s_Ebias.png",particle.c_str()) );
   G4BC_hist->GetZaxis()->SetRangeUser(0,0.5);
 
   G4BC_hist->Draw("colz");
-  cc1->Print(Form("G4BC_%s_NuclMult.png",particle.c_str()) );
+  cc1->Print(Form("G4BC_%s_Ebias.png",particle.c_str()) );
 
-  TFile *outfile = new TFile("FSI_KOAbs_Mult_reweight_template.root","UPDATE");
-  hA2018_hist->Write(Form("hA2018_%s_NuclMult", particle.c_str()));
-  hN2018_hist->Write(Form("hN2018_%s_NuclMult", particle.c_str()));
-  INCL_hist->Write(Form("INCL++_%s_NuclMult", particle.c_str()));
-  G4BC_hist->Write(Form("Geant4_%s_NuclMult", particle.c_str()));
+  TFile *outfile = new TFile("FSI_KOAbs_Evis_reweight_template.root","UPDATE");
+  hA2018_hist->Write(Form("hA2018_%s_KEini_vs_Ebias", particle.c_str()));
+  hN2018_hist->Write(Form("hN2018_%s_KEini_vs_Ebias", particle.c_str()));
+  INCL_hist->Write(Form("INCL++_%s_KEini_vs_Ebias", particle.c_str()));
+  G4BC_hist->Write(Form("Geant4_%s_KEini_vs_Ebias", particle.c_str()));
 
   outfile->Write();  outfile->Close(); }
-void buildTemplateforMult(){
+void buildTemplateforEbiasKOAbs(){
 buildTemplate(211);
 buildTemplate(-211);
 buildTemplate(111);

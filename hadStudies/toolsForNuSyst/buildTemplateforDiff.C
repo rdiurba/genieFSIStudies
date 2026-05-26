@@ -250,7 +250,7 @@ void buildTemplate(int pdg=211) {
   G4BC_hist->Draw("colz");
   cc1->Print(Form("G4BC_%s_NuclDiff.png",particle.c_str()) );
 
-  TFile *outfile = new TFile("FSI_KOAbs_Mult_reweight_template.root","UPDATE");
+  TFile *outfile = new TFile("FSI_KOAbs_Diff_reweight_template.root","UPDATE");
   hA2018_hist->Write(Form("hA2018_%s_NuclDiff", particle.c_str()));
   hN2018_hist->Write(Form("hN2018_%s_NuclDiff", particle.c_str()));
   INCL_hist->Write(Form("INCL++_%s_NuclDiff", particle.c_str()));
@@ -258,6 +258,7 @@ void buildTemplate(int pdg=211) {
 
   outfile->Write();  outfile->Close(); }
 void buildTemplateforDiff(){
+buildTemplate(211);
 buildTemplate(-211);
 buildTemplate(111);
 buildTemplate(2212);

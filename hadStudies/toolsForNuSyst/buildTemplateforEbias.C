@@ -235,7 +235,7 @@ TH2* getHist(std::string simulation, int pdg, std::string particle) { // get his
             }
       }
       
-      if ( (fsi==5 || fsi==6) && fsi!=7 && KEini>0&&KEini<20) { // selections (e.g. exclusive channel & KE range)
+      if ( (fsi!=1 && fsi!=3) && KEini>0&&KEini<20) { // selections (e.g. exclusive channel & KE range)
 
 
 
@@ -293,7 +293,7 @@ void buildTemplate(int pdg=211) {
   G4BC_hist->Draw("colz");
   cc1->Print(Form("G4BC_%s_Ebias.png",particle.c_str()) );
 
-  TFile *outfile = new TFile("FSI_KOAbs_Evis_reweight_template.root","UPDATE");
+  TFile *outfile = new TFile("FSI_Evis_reweight_template.root","UPDATE");
   hA2018_hist->Write(Form("hA2018_%s_KEini_vs_Ebias", particle.c_str()));
   hN2018_hist->Write(Form("hN2018_%s_KEini_vs_Ebias", particle.c_str()));
   INCL_hist->Write(Form("INCL++_%s_KEini_vs_Ebias", particle.c_str()));
