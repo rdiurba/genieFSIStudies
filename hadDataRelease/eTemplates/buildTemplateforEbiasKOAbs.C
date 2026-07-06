@@ -33,12 +33,13 @@ void normalizePerEnergy(TH2D* h)
         }
     }
 }
-TH2* getHist(std::string simulation, int pdg, std::string particle) { // get histogram from the TTree (e.g. gst/ginuke file)
+
+TH2* getHist(std::string simulation, int pdg, std::string particle, int target) { // get histogram from the TTree (e.g. gst/ginuke file)
 
   const int nummax = 99;
 
 
-    int NuclMultBins=25;
+    int eBiasBins=25;
     Float_t vEdges[26];
     vEdges[0]=-1;
       for (int i = 1; i < 26; ++i){
@@ -58,12 +59,12 @@ TH2* getHist(std::string simulation, int pdg, std::string particle) { // get his
 
     binEdges[0]  = v[0]  - (binEdges[1]  - v[0]);
     binEdges[40] = v[39] + (v[39] - binEdges[39]);
-    //TH2D* h_KEini_NuclMult = new TH2D(Form("%s_%s",simulation.c_str(),particle.c_str()), "NuclMult vs KEini; KEini [GeV]; Relative NuclMult", bins, binEdges, NuclMultBins, vEdges);
-    TH2D* h_KEini_NuclMult = new TH2D(Form("%s_%s_NuclMult", simulation.c_str(), particle.c_str()), Form("%s_%s_NuclMult", simulation.c_str(), particle.c_str()), 40, 0, 2, 40,0,40);
+    //TH2D* h_KEini_Ebias = new TH2D(Form("%s_%s",simulation.c_str(),particle.c_str()), "Ebias vs KEini; KEini [GeV]; Relative Ebias", bins, binEdges, eBiasBins, vEdges);
+    TH2D* h_KEini_Ebias = new TH2D(Form("%s_%s_%d_KEini_vs_Ebias", simulation.c_str(), particle.c_str(),target), Form("%s_%s_%d_KEini_vs_Ebias", simulation.c_str(), particle.c_str(),target), 40, 0, 2,  20, -1, 1);
 
-    TH2D* hist;
+    TH3D* hist;
     for (int i=1; i<40; i++){
-    TFile* file = new TFile(Form("$PSCRATCH/hadronFiles/%s_1000180400_%gGeV_%s_100k.ginuke.root",particle.c_str(),v.at(i),simulation.c_str() ));
+    TFile* file = new TFile(Form("$PSCRATCH/hadronFiles/%s_%d_%gGeV_%s_100k.ginuke.root",particle.c_str(),target,v.at(i),simulation.c_str() ));
 
 
 
@@ -104,7 +105,7 @@ TH2* getHist(std::string simulation, int pdg, std::string particle) { // get his
     tree->SetBranchAddress("npi0", &npi0);
     int probe=pdg;
     // fill histograms
-        bool compound=0;
+        bool compound=1;
     for (int i=0; i<tree->GetEntries(); ++i) {
       tree->GetEntry(i);
        int    mult   = 0;
@@ -193,26 +194,73 @@ TH2* getHist(std::string simulation, int pdg, std::string particle) { // get his
         }
 
 
+      double maxKE = -999;
+      int maxidx = -1;
+      double minKE = 999;
+      int minidx = -1;
+      double Ehad = 0;
+      int ngamma = 0;
+      int nother = 0;
+      for (int idx = 0; idx < nh; ++idx) {
+        double tmpKE = Eh[idx] - mh[idx];
+        if (tmpKE > maxKE) {
+          maxKE = tmpKE;
+          maxidx = idx;
+        }
+        if (tmpKE < minKE) {
+          minKE = tmpKE;
+          minidx = idx;
+        }
+        
+        if (pdgh[idx]==211||pdgh[idx]==-211||pdgh[idx]==111)
+          Ehad += Eh[idx]; // E_pi
+          //Ehad += tmpKE; // KE_pi
+        else if (pdgh[idx]==2212){
+         if (tmpKE>thresh) Ehad += tmpKE;} //KE_p}
+        else if (pdgh[idx]==2112)
+          ;
+        else if (pdgh[idx]==22) {
+          ++ngamma;
+          Ehad += Eh[idx];
+        }
+        else if (pdgh[idx] > 1000000000) {
+                int Z = (pdgh[idx] / 10000) % 1000;
+                int A = (pdgh[idx] / 10)    % 1000;
+                int N = A - Z;
+
+                if (Z > 2)          continue;
+                if (tmpKE <= thresh*A) continue;
+
+
+                 if (compound==true) Ehad += tmpKE;
+            }
+      }
       
       if ( (fsi==5 || fsi==6) && fsi!=7 && KEini>0&&KEini<20) { // selections (e.g. exclusive channel & KE range)
 
 
 
-    
-        //h_NuclMult->Fill(NuclMult);
-        h_KEini_NuclMult->Fill(KEini, mult);
+        
+        double Ebias;
+        if (pdg==2212 || pdg==2112)
+          Ebias = (KEini - Ehad) / KEini;
+        else if (pdg==211 || pdg==111 || pdg==-211)
+          Ebias = (Eini - Ehad) / Eini;
+        //h_Ebias->Fill(Ebias);
+        h_KEini_Ebias->Fill(KEini, Ebias);
       }
     }
+     file->Close();
 
     }
     
-        normalizePerEnergy(h_KEini_NuclMult);
-  return h_KEini_NuclMult;
+        normalizePerEnergy(h_KEini_Ebias);
+  return h_KEini_Ebias;
 }
 
-void buildTemplate(int pdg=211) {
+void buildTemplate(int pdg=211, int target=1000180400) {
 
-  TH3 *hA2018_hist, *hN2018_hist, *INCL_hist, *G4BC_hist;
+  TH2 *hA2018_hist, *hN2018_hist, *INCL_hist, *G4BC_hist;
   string particle;
 
 
@@ -221,10 +269,10 @@ void buildTemplate(int pdg=211) {
     else if (pdg == 211) particle = "piPlus";
     else if (pdg == 111) particle = "pi0";
     else if (pdg == -211) particle = "piMinus";
-    hA2018_hist = (TH3*)getHist(Form("hA2018"), pdg, particle);
-    hN2018_hist = (TH3*)getHist(Form("hN2018"), pdg, particle);
-    INCL_hist = (TH3*)getHist(Form("HINCL"), pdg, particle);
-    G4BC_hist = (TH3*)getHist(Form("HG4BertCasc"), pdg, particle);
+    hA2018_hist = (TH2*)getHist(Form("hA2018"), pdg, particle,target);
+    hN2018_hist = (TH2*)getHist(Form("hN2018"), pdg, particle,target);
+    INCL_hist = (TH2*)getHist(Form("HINCL"), pdg, particle,target);
+    G4BC_hist = (TH2*)getHist(Form("HG4BertCasc"), pdg, particle,target);
   
   
     gStyle->SetOptStat(0);
@@ -232,34 +280,38 @@ void buildTemplate(int pdg=211) {
   TCanvas* cc1 = new TCanvas();
   hA2018_hist->GetZaxis()->SetRangeUser(0,0.5);
   hA2018_hist->Draw("colz");
-  cc1->Print(Form("hA2018_%s_NuclMult.png",particle.c_str()) );
+  cc1->Print(Form("hA2018_%s_EbiasKOAbs.png",particle.c_str()) );
 
   hN2018_hist->GetZaxis()->SetRangeUser(0,0.5);
   hN2018_hist->Draw("colz");
 
-  cc1->Print(Form("hN2018_%s_NuclMult.png",particle.c_str()) );
+  cc1->Print(Form("hN2018_%s_EbiasKOAbs.png",particle.c_str()) );
   INCL_hist->GetZaxis()->SetRangeUser(0,0.5);
 
   INCL_hist->Draw("colz");
-  cc1->Print(Form("INCL_%s_NuclMult.png",particle.c_str()) );
+  cc1->Print(Form("INCL_%s_EbiasKOAbs.png",particle.c_str()) );
   G4BC_hist->GetZaxis()->SetRangeUser(0,0.5);
 
   G4BC_hist->Draw("colz");
-  cc1->Print(Form("G4BC_%s_NuclMult.png",particle.c_str()) );
+  cc1->Print(Form("G4BC_%s_EbiasKOAbs.png",particle.c_str()) );
 
-  TFile *outfile = new TFile("FSI_KOAbs_Mult_reweight_template.root","UPDATE");
-  hA2018_hist->Write(Form("hA2018_%s_NuclMult", particle.c_str()));
-  hN2018_hist->Write(Form("hN2018_%s_NuclMult", particle.c_str()));
-  INCL_hist->Write(Form("INCL++_%s_NuclMult", particle.c_str()));
-  G4BC_hist->Write(Form("Geant4_%s_NuclMult", particle.c_str()));
+  TFile *outfile = new TFile("FSI_KOAbs_Evis_reweight_template.root","UPDATE");
+  hA2018_hist->Write(Form("hA2018_%s_%d_KEini_vs_Ebias", particle.c_str(),target));
+  hN2018_hist->Write(Form("hN2018_%s_%d_KEini_vs_Ebias", particle.c_str(),target));
+  INCL_hist->Write(Form("INCL++_%s_%d_KEini_vs_Ebias", particle.c_str(),target));
+  G4BC_hist->Write(Form("Geant4_%s_%d_KEini_vs_Ebias", particle.c_str(),target));
 
   outfile->Write();  outfile->Close(); }
-void buildTemplateforMult(){
-buildTemplate(211);
-buildTemplate(-211);
-buildTemplate(111);
-buildTemplate(2212);
-buildTemplate(2112);
-
+void buildTemplateforEbiasKOAbs(){
+buildTemplate(211,1000060120);
+buildTemplate(-211,1000060120);
+buildTemplate(111,1000060120);
+buildTemplate(2212,1000060120);
+buildTemplate(2112,1000060120);
+buildTemplate(211,1000180400);
+buildTemplate(-211,1000180400);
+buildTemplate(111,1000180400);
+buildTemplate(2212,1000180400);
+buildTemplate(2112,1000180400);
 
 }
