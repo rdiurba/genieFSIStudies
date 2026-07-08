@@ -30,303 +30,64 @@
 #include "TDecompChol.h"
 #include "TEfficiency.h"
 enum Mode { kKO, kAbs };
-struct LinearParams {
-    double slope, intercept;
-};
-
-struct GammaParams {
-    double slope, intercept, floor, exp;
-};
-
-struct ModelParamsLinear {
-    LinearParams hA, hN, INCL, G4;
-};
-
-struct ModelParamsGamma {
-    GammaParams hA, hN, INCL, G4;
-};
-
-// ============================================================
-// Nucleon: PDG 2212 (p+), -2212 (p-), 2112 (n)
-// ============================================================
-// Probe PDG: 2212
-
-struct TargetParams {
-    ModelParamsLinear DifMean;
-    ModelParamsLinear DifStd;
-    ModelParamsGamma  SumGamma;
-};
-
-std::map<int, TargetParams> nucleonFitParams;
-
-void makeNucleonParams() {
-    nucleonFitParams[1000060120] = {  // C12
-        // DifMean (Difference Mean)
-        {
-            {0.5746, 1.1866},  // hA
-            {0.2722, 1.2417},  // hN
-            {0.2678, 1.1802},  // INCL
-            {-1.2307, 2.3133}  // G4
-        },
-        // DifStd (Difference Std)
-        {
-            {0.3543, 1.8746},  // hA
-            {-0.0353, 1.5883},  // hN
-            {-0.0449, 1.2859},  // INCL
-            {0.2465, 1.3957}  // G4
-        },
-        // SumGamma (exponential: intercept*exp(KE^exp * slope) + floor)
-        {
-            {-0.7849, 0.7495, 0.0000, 1.0000},  // hA
-            {-0.7622, 1.0998, 0.0000, 1.0000},  // hN
-            {-5.5661, 4.5083, 0.0000, 1.0000},  // INCL
-            {-5.8711, 4.7078, 0.0000, 1.0000}  // G4
-        }
-    };
-    nucleonFitParams[1000180400] = {  // Ar40
-        // DifMean (Difference Mean)
-        {
-            {0.0028, 0.4404},  // hA
-            {-0.0195, 0.8275},  // hN
-            {0.2749, 0.6338},  // INCL
-            {-1.6409, 1.9140}  // G4
-        },
-        // DifStd (Difference Std)
-        {
-            {0.6351, 1.9862},  // hA
-            {0.4676, 1.7612},  // hN
-            {0.4292, 1.3969},  // INCL
-            {0.4111, 1.5907}  // G4
-        },
-        // SumGamma (exponential: intercept*exp(KE^exp * slope) + floor)
-        {
-            {-0.9028, 0.7306, 0.0000, 1.0000},  // hA
-            {-0.6253, 0.7244, 0.0000, 1.0000},  // hN
-            {-5.6058, 4.4220, 0.0000, 1.0000},  // INCL
-            {-7.7269, 5.6687, 0.0000, 1.0000}  // G4
-        }
-    };
-    nucleonFitParams[1000080160] = {  // O16
-        // DifMean (Difference Mean)
-        {
-            {0.5969, 1.1537},  // hA
-            {0.2018, 1.2612},  // hN
-            {0.3277, 1.1343},  // INCL
-            {-1.3469, 2.3772}  // G4
-        },
-        // DifStd (Difference Std)
-        {
-            {0.4093, 1.9114},  // hA
-            {0.0217, 1.6573},  // hN
-            {0.1314, 1.2863},  // INCL
-            {0.1971, 1.4729}  // G4
-        },
-        // SumGamma (exponential: intercept*exp(KE^exp * slope) + floor)
-        {
-            {-0.7918, 0.6834, 0.0000, 1.0000},  // hA
-            {-0.8751, 1.0721, 0.0000, 1.0000},  // hN
-            {-5.7255, 4.6972, 0.0000, 1.0000},  // INCL
-            {-6.4376, 5.0006, 0.0000, 1.0000}  // G4
-        }
-    };
-    nucleonFitParams[1000260560] = {  // Fe56
-        // DifMean (Difference Mean)
-        {
-            {0.0474, 0.6469},  // hA
-            {-0.0670, 0.9154},  // hN
-            {0.2489, 0.8166},  // INCL
-            {-1.7560, 2.1978}  // G4
-        },
-        // DifStd (Difference Std)
-        {
-            {0.7882, 1.9893},  // hA
-            {0.6754, 1.7866},  // hN
-            {0.4306, 1.4387},  // INCL
-            {0.6319, 1.5114}  // G4
-        },
-        // SumGamma (exponential: intercept*exp(KE^exp * slope) + floor)
-        {
-            {-0.9633, 0.7441, 0.0000, 1.0000},  // hA
-            {-0.6125, 0.6577, 0.0000, 1.0000},  // hN
-            {-5.0279, 4.0393, 0.0000, 1.0000},  // INCL
-            {-6.5398, 4.9023, 0.0000, 1.0000}  // G4
-        }
-    };
-}
-
-// ============================================================
-// Pion: PDG 211 (pi+), -211 (pi-), 111 (pi0)
-// ============================================================
-// Probe PDG: 211
-
-struct PionTargetParams {
-    ModelParamsLinear DifMean;
-    ModelParamsLinear DifStd;
-    ModelParamsLinear SumMean;
-    ModelParamsLinear SumStd;
-};
-
-std::map<int, PionTargetParams> pionFitParams;
-
-void makePionParams() {
-    pionFitParams[1000060120] = {  // C12
-        // DifMean (Difference Mean)
-        {
-            {2.9002, 1.7511},  // hA
-            {-0.1257, 2.3318},  // hN
-            {0.1201, 2.2436},  // INCL
-            {-0.2030, 2.1775}  // G4
-        },
-        // DifStd (Difference Std)
-        {
-            {-0.1002, 3.7254},  // hA
-            {-0.0056, 1.3204},  // hN
-            {-0.1042, 1.0109},  // INCL
-            {0.1389, 0.9416}  // G4
-        },
-        // SumMean (Sum Mean)
-        {
-            {1.0699, 4.1030},  // hA
-            {2.0520, 4.8404},  // hN
-            {1.2387, 3.4527},  // INCL
-            {0.7994, 1.9895}  // G4
-        },
-        // SumStd (Sum Std)
-        {
-            {0.6212, 0.8323},  // hA
-            {0.3243, 3.2116},  // hN
-            {0.9083, 1.3591},  // INCL
-            {1.2666, 2.7622}  // G4
-        },
-    };
-    pionFitParams[1000180400] = {  // Ar40
-        // DifMean (Difference Mean)
-        {
-            {2.2903, 0.8905},  // hA
-            {-0.6633, 1.4800},  // hN
-            {-0.4752, 1.1072},  // INCL
-            {-1.0096, 1.3981}  // G4
-        },
-        // DifStd (Difference Std)
-        {
-            {0.2987, 3.2604},  // hA
-            {0.3182, 2.2811},  // hN
-            {0.7081, 1.2767},  // INCL
-            {0.2957, 1.3652}  // G4
-        },
-        // SumMean (Sum Mean)
-        {
-            {3.7611, 4.9256},  // hA
-            {6.6766, 7.1275},  // hN
-            {4.9647, 1.8701},  // INCL
-            {8.6358, 1.7998}  // G4
-        },
-        // SumStd (Sum Std)
-        {
-            {2.1374, 1.6616},  // hA
-            {1.2266, 4.5166},  // hN
-            {3.7494, 2.4962},  // INCL
-            {1.4930, 3.0141}  // G4
-        },
-    };
-    pionFitParams[1000080160] = {  // O16
-        // DifMean (Difference Mean)
-        {
-            {2.8132, 1.9100},  // hA
-            {-0.0463, 2.1889},  // hN
-            {0.1818, 2.1437},  // INCL
-            {-0.1161, 2.2395}  // G4
-        },
-        // DifStd (Difference Std)
-        {
-            {-0.1951, 3.9639},  // hA
-            {0.0106, 1.5698},  // hN
-            {0.0372, 1.0794},  // INCL
-            {0.1149, 1.0644}  // G4
-        },
-        // SumMean (Sum Mean)
-        {
-            {1.4981, 4.2037},  // hA
-            {3.2590, 5.0669},  // hN
-            {1.8017, 2.9937},  // INCL
-            {2.5676, 3.1655}  // G4
-        },
-        // SumStd (Sum Std)
-        {
-            {0.9073, 0.9469},  // hA
-            {0.7763, 3.4013},  // hN
-            {0.8655, 1.4225},  // INCL
-            {1.0681, 2.2491}  // G4
-        },
-    };
-    pionFitParams[1000260560] = {  // Fe56
-        // DifMean (Difference Mean)
-        {
-            {1.8171, 0.9453},  // hA
-            {-0.7655, 1.6732},  // hN
-            {-0.6367, 1.9307},  // INCL
-            {-0.6924, 2.2437}  // G4
-        },
-        // DifStd (Difference Std)
-        {
-            {0.3591, 3.3994},  // hA
-            {0.6809, 2.3669},  // hN
-            {0.7452, 1.2930},  // INCL
-            {0.3858, 1.4334}  // G4
-        },
-        // SumMean (Sum Mean)
-        {
-            {5.0295, 5.7037},  // hA
-            {9.1261, 6.7006},  // hN
-            {5.6704, 3.6514},  // INCL
-            {10.2044, 1.6007}  // G4
-        },
-        // SumStd (Sum Std)
-        {
-            {2.5278, 2.2597},  // hA
-            {1.7786, 4.6312},  // hN
-            {1.6104, 2.1473},  // INCL
-            {2.0127, 2.6716}  // G4
-        },
-    };
-}
+#include <map>
+#include <variant>
+#include "FSIReweight.h"
 
 // =======================================================
 // Unified histogram builder
 // =======================================================
-TH1D* makeHistogram(TTree* t, std::string label, Mode mode, bool useThreshold,int A1, int target, bool compound, bool RW, std::string reweightModel="INCL++")
+TH1D* makeHistogram(TTree* t, int pdg, std::string label, Mode mode, bool useThreshold,int A1, int target, bool compound, bool RW, std::string reweightModel="INCL++")
 {
+   bool isPion = (pdg==211 || pdg==-211 || pdg==111);
+
+    std::string pstr;
+        TFile* fa=TFile::Open("FSI_KOAbs_Mult_reweight_template.root","READ");
+    TFile* fb = TFile::Open("FSI_KOAbs_Diff_reweight_template.root", "READ");
+        if (pdg==211) pstr="piPlus";
+        if (pdg==-211) pstr="piMinus";
+        if (pdg==111) pstr="pi0";
+        if (pdg==2212) pstr="protonPlus";
+        if (pdg==-2212) pstr="protonMinus";
+        if (pdg==2112) pstr="neutron";
+    
     int min=0; int max=40;
     if (A1<40){ min=0; max=A1+2;}
     TH1D *hist = new TH1D(Form("hist_%s",label.c_str()),
                           Form("hist_%s",label.c_str()),max,min,max);
-
     if (!t || t->GetEntries() < 1) return hist;
 
-    int pdgf[100], nf, probe_fsi;
-    double Ef[100], mh[100];
-    int np; int nn; double KEini;
-    t->SetBranchAddress("pdgh",&pdgf);
-    t->SetBranchAddress("ke",&KEini);
-    t->SetBranchAddress("nh",&nf);
-    t->SetBranchAddress("Eh",&Ef);
-    t->SetBranchAddress("mh",&mh);
-    t->SetBranchAddress("np",&np);
-    t->SetBranchAddress("nn",&nn);
+    int pdgh[100], nh; 
+    double Eh[100], mh[100];
+    int probe_fsi;
+    int npi0, npip, npim;
+    double KEini, Eini;
+    
+    t->SetBranchAddress("pdgh",      pdgh);
+    t->SetBranchAddress("npi0",   &npi0);
+    t->SetBranchAddress("npip",   &npip);
+    t->SetBranchAddress("npim",   &npim);
+    t->SetBranchAddress("ke",       &KEini);
+    t->SetBranchAddress("e",        &Eini);
+    t->SetBranchAddress("nh",       &nh);
+    t->SetBranchAddress("Eh",        Eh);
+    t->SetBranchAddress("mh",        mh);
     t->SetBranchAddress("probe_fsi",&probe_fsi);
+
     
     int required_fsi = (mode == kAbs) ? 5 : 6;
     double thresh = useThreshold ? 0.005 : 0.0;
 
     for (Long64_t j=0; j<t->GetEntries(); j++){
         t->GetEntry(j);
-        if (probe_fsi!=5 && probe_fsi!=6) continue;
        int mult=0;
        int piMult=0;
        int diff=0;
-       for(int i=0; i<nf; i++){
-            int apdg = abs(pdgf[i]);
-            double KE = Ef[i] - mh[i];
+    double visE=0;
+
+       for(int i=0; i<nh; i++){
+            int apdg = abs(pdgh[i]);
+            double KE = Eh[i] - mh[i];
             if (apdg==211|| apdg==111){
                 piMult++;
             }
@@ -355,63 +116,65 @@ TH1D* makeHistogram(TTree* t, std::string label, Mode mode, bool useThreshold,in
         if (required_fsi==6 && (mult<3 || piMult!=0)) continue;
         if (required_fsi==5 && (piMult!=0 || mult<2)) continue;
 
-        if (useThreshold==0 && compound==false) mult=np+nn;
-if (RW) {
-    double hAEst=1;
-    double AltEst=1;
-    if (mode==kAbs){
-    const auto& tp = pionFitParams.at(target);
 
-        const LinearParams& altSumMean = (reweightModel=="hN2018") ? tp.SumMean.hN   :
-                                         (reweightModel=="Geant4")  ? tp.SumMean.G4   :
-                                                                       tp.SumMean.INCL;
-        const LinearParams& altSumStd  = (reweightModel=="hN2018") ? tp.SumStd.hN    :
-                                         (reweightModel=="Geant4")  ? tp.SumStd.G4    :
-                                                                       tp.SumStd.INCL;
+        for (int i = 0; i < nh; i++) {           // fixed: nf/pdgf/Ef -> nh/pdgh/Eh
+            int    apdg = abs(pdgh[i]);
+            double KE   = Eh[i] - mh[i];
 
-        double meanAltSum = altSumMean.slope * KEini + altSumMean.intercept;
-        double stdAltSum  = altSumStd.slope  * KEini + altSumStd.intercept;
-        double meanhASum  = tp.SumMean.hA.slope * KEini + tp.SumMean.hA.intercept;
-        double stdhASum   = tp.SumStd.hA.slope  * KEini + tp.SumStd.hA.intercept;
+            if (apdg == 211) {
+                visE += Eh[i];                    // fixed: Ef -> Eh
+            }
+            if (apdg == 22) {
+                //if (KE <= 0.5 * thresh) continue;
+                visE += Eh[i];                    // fixed: Ef -> Eh
+
+            }
+            
+            if (apdg == 111) {
+                visE += Eh[i];                    // fixed: Ef -> Eh
 
 
+            }
+            if (KE <= thresh) continue;
 
-        const LinearParams& altDifMean = (reweightModel=="hN2018") ? tp.DifMean.hN   :
-                                         (reweightModel=="Geant4")  ? tp.DifMean.G4   :
-                                                                       tp.DifMean.INCL;
-        const LinearParams& altDifStd  = (reweightModel=="hN2018") ? tp.DifStd.hN    :
-                                         (reweightModel=="Geant4")  ? tp.DifStd.G4    :
-                                                                       tp.DifStd.INCL;
+            if (apdg == 2212 || apdg == 2112) {
+                if (apdg == 2212) visE += KE;
+            }
 
-        double meanAltDif = altDifMean.slope * KEini + altDifMean.intercept;
-        double stdAltDif  = altDifStd.slope  * KEini + altDifStd.intercept;
-        double meanhADif  = tp.DifMean.hA.slope * KEini + tp.DifMean.hA.intercept;
-        double stdhADif   = tp.DifStd.hA.slope  * KEini + tp.DifStd.hA.intercept;
+            if (apdg > 1000000000) {
+                int Z = (apdg / 10000) % 1000;
+                int A = (apdg / 10)    % 1000;
+                int N = A - Z;
 
-        double hAEstSum  = TMath::Gaus(mult, meanhASum,  stdhASum,  1);
-        double AltEstSum = TMath::Gaus(mult, meanAltSum, stdAltSum, 1);
-        double hAEstDif  = TMath::Gaus(diff, meanhADif,  stdhADif,  1);
-        double AltEstDif = TMath::Gaus(diff, meanAltDif, stdAltDif, 1);
-        hAEst=hAEstSum*hAEstDif; AltEst=AltEstSum*AltEstDif;
+                if (Z > 2)          continue;
+                if (KE <= thresh*A) continue;
+
+
+                   if (compound==1){
+                                        visE += KE;}
+            }
+        }
+
+        double Ehad = visE;                       // fixed: removed re-declaration of visE, named clearly
+        double Ebias = 0.0;
+        if (mode==kKO)
+            Ebias = (KEini - Ehad) / KEini;
+        else 
+            Ebias = (Eini - Ehad) / Eini;
+
+        if (RW) {
+
+ 
+ 
+            double hAEst, AltEst;
+            computeMultDiffWeights(pdg, target, mult, diff, KEini, max,
+                                   reweightModel, isPion,
+                                   hAEst, AltEst);
+ 
+            double rw = (AltEst / hAEst);
+         
     
-    }
-    else{
-
-
-        const auto& tp = nucleonFitParams.at(target);
-
-        const GammaParams& altGamma = (reweightModel=="hN2018") ? tp.SumGamma.hN   :
-                                      (reweightModel=="Geant4")  ? tp.SumGamma.G4   :
-                                                                   tp.SumGamma.INCL;
-
-        double gammaAlt = altGamma.intercept * TMath::Exp(TMath::Power(KEini, altGamma.exp) * altGamma.slope) + altGamma.floor;
-        double gammaHA  = tp.SumGamma.hA.intercept * TMath::Exp(TMath::Power(KEini, tp.SumGamma.hA.exp) * tp.SumGamma.hA.slope) + tp.SumGamma.hA.floor;
-        hAEst  = TMath::Exp(-(mult - 3) * gammaHA);
-        AltEst = TMath::Exp(-(mult - 3) * gammaAlt);
-    }
-    double rw     = (hAEst > 0) ? AltEst / hAEst : 1.0;
-    if(rw<0.01) rw=0.01; if (rw>100) rw=100;
-            hist->Fill(mult, rw);
+        hist->Fill(mult, rw);
         } else {
             hist->Fill(mult, 1);
         }
@@ -423,10 +186,9 @@ if (RW) {
 // =======================================================
 // Main plotting function
 // =======================================================
-void plotTotNuclRW(int probe=211, double ke=0.175, int target=1000180400,
-                  bool useThreshold = true, std::string reweightModel="hN2018"){
-    makePionParams();
-    makeNucleonParams();
+void plotTotNuclRW(int probe=211, double ke=0.125, int target=1000180400,
+                  bool useThreshold = true, std::string reweightModel="Geant4"){
+    makeAllParams();
     std::string probeStr;
     Mode mode = (probe==2212 || probe==-2212 || probe==2112) ? kKO : kAbs;
     bool isPion = (probe==211 || probe==-211 || probe==111);
@@ -469,7 +231,7 @@ void plotTotNuclRW(int probe=211, double ke=0.175, int target=1000180400,
 
     int Z = (target/10000) % 1000;
     int A = (target/10) % 1000;
-    double min=-20; double max=20;
+    double min=-20; double max=40;
     if (A<40){ min=0; max=12;}
                               
 
@@ -481,17 +243,17 @@ void plotTotNuclRW(int probe=211, double ke=0.175, int target=1000180400,
     // ---------------------------------------------------
     // Histograms
     // ---------------------------------------------------
-    int compound=0;
-    TH1D* h1 = makeHistogram(t1,"20i",mode,useThreshold,A,target,compound,1,reweightModel);
-    TH1D* h2 = makeHistogram(t2,"20j",mode,useThreshold,A,target,compound,0);
-    TH1D* h3 = makeHistogram(t3,"20k",mode,useThreshold,A,target,compound,0);
-    TH1D* h4 = makeHistogram(t4,"20l",mode,useThreshold,A,target,compound,0);
+    int compound=1;
+    TH1D* h1 = makeHistogram(t1,probe,"20i",mode,useThreshold,A,target,compound,1,reweightModel);
+    TH1D* h2 = makeHistogram(t2,probe,"20j",mode,useThreshold,A,target,compound,0);
+    TH1D* h3 = makeHistogram(t3,probe,"20k",mode,useThreshold,A,target,compound,0);
+    TH1D* h4 = makeHistogram(t4,probe,"20l",mode,useThreshold,A,target,compound,0);
+    std::cout<<h1->Integral()<<","<<h1->GetEntries()<<std::endl;
 
 h1->Scale(1.0 / h1->Integral());
 h2->Scale(1.0 / h2->Integral());
 h3->Scale(1.0 / h3->Integral());
 h4->Scale(1.0 / h4->Integral());
-
     h1->SetLineColor(kBlack);
     h2->SetLineColor(kRed);   h2->SetLineStyle(2);
     h3->SetLineColor(kBlue);  h3->SetLineStyle(4);
@@ -558,7 +320,7 @@ leg->SetTextSize(0.05);     // smaller, fits entries
 
 
 
-leg->AddEntry(h1,Form("hA2018 Reweighted to %s",reweightModel.c_str()),"l");
+leg->AddEntry(h1,Form("hA2018 Altered to %s Mult.",reweightModel.c_str()),"l");
 leg->AddEntry(h2,"hN2018","l");
 leg->AddEntry(h3,"INCL++","l");
 leg->AddEntry(h4,"Geant4","l");
@@ -587,7 +349,7 @@ leg->Draw();
 
 
 
-    c1->Print(Form("../plotting/%s_%s_%s_%d_%d_%dRW%s.pdf",
+   c1->Print(Form("../plotting/%s_%s_%s_%d_%d_%dRW%s.pdf",
                   channelStr.c_str(),
                   probeStr.c_str(),
                   keStr.c_str(),

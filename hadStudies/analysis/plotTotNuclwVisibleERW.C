@@ -169,8 +169,8 @@ TH1D* makeHistogram(TTree* t, std::string label, Mode mode, bool useThreshold,in
 
     if (RW) {
     TFile* f2 = TFile::Open("FSI_KOAbs_Evis_reweight_template.root", "READ");
-        TH2D* hist_nom = (TH2D*)f2->Get(Form("hA2018_%s_KEini_vs_Ebias", pstr.c_str()));
-    TH2D* hist_alt = (TH2D*)f2->Get(Form("%s_%s_KEini_vs_Ebias",     reweightModel.c_str(), pstr.c_str()));
+            TH2D* hist_nom = (TH2D*)f2->Get(Form("hA2018_%s_%d_KEini_vs_Ebias",  pstr.c_str(),target));
+            TH2D* hist_alt = (TH2D*)f2->Get(Form("%s_%s_%d_KEini_vs_Ebias",   reweightModel.c_str(), pstr.c_str(),target));
     double visERW=GetVisEReweight(hist_nom, hist_alt, KEini, -Ebias);
 
     double rw     = visERW;
@@ -325,7 +325,7 @@ leg->SetTextFont(42);       // standard scalable font
 leg->SetTextSize(0.035);     // smaller, fits entries
 
 
-leg->AddEntry(h1,Form("hA2018 Reweighted to %s",reweightModel.c_str()),"l");
+leg->AddEntry(h1,Form("hA2018 Reweighted to Visible E of %s",reweightModel.c_str()),"l");
 leg->AddEntry(h2,"hN2018","l");
 leg->AddEntry(h3,"INCL++","l");
 leg->AddEntry(h4,"Geant4","l");

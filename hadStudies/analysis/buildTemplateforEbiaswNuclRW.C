@@ -6,269 +6,10 @@
 #include "TTree.h"
 #include "TString.h"
 #include "TFile.h"
+#include "FSIReweight.h"
 enum Mode { kKO, kAbs };
-
-struct LinearParams {
-    double slope, intercept;
-};
-
-struct GammaParams {
-    double slope, intercept, floor, exp;
-};
-
-struct ModelParamsLinear {
-    LinearParams hA, hN, INCL, G4;
-};
-
-struct ModelParamsGamma {
-    GammaParams hA, hN, INCL, G4;
-};
-
-// ============================================================
-// Nucleon: PDG 2212 (p+), -2212 (p-), 2112 (n)
-// ============================================================
-// Probe PDG: 2212
-
-struct TargetParams {
-    ModelParamsLinear DifMean;
-    ModelParamsLinear DifStd;
-    ModelParamsGamma  SumGamma;
-};
-
-std::map<int, TargetParams> nucleonFitParams;
-
-void makeNucleonParams() {
-    nucleonFitParams[1000060120] = {  // C12
-        // DifMean (Difference Mean)
-        {
-            {0.5746, 1.1866},  // hA
-            {0.2722, 1.2417},  // hN
-            {0.2678, 1.1802},  // INCL
-            {-1.2307, 2.3133}  // G4
-        },
-        // DifStd (Difference Std)
-        {
-            {0.3543, 1.8746},  // hA
-            {-0.0353, 1.5883},  // hN
-            {-0.0449, 1.2859},  // INCL
-            {0.2465, 1.3957}  // G4
-        },
-        // SumGamma (exponential: intercept*exp(KE^exp * slope) + floor)
-        {
-            {-0.7849, 0.7495, 0.0000, 1.0000},  // hA
-            {-0.7622, 1.0998, 0.0000, 1.0000},  // hN
-            {-5.5661, 4.5083, 0.0000, 1.0000},  // INCL
-            {-5.8711, 4.7078, 0.0000, 1.0000}  // G4
-        }
-    };
-    nucleonFitParams[1000180400] = {  // Ar40
-        // DifMean (Difference Mean)
-        {
-            {0.0028, 0.4404},  // hA
-            {-0.0195, 0.8275},  // hN
-            {0.2749, 0.6338},  // INCL
-            {-1.6409, 1.9140}  // G4
-        },
-        // DifStd (Difference Std)
-        {
-            {0.6351, 1.9862},  // hA
-            {0.4676, 1.7612},  // hN
-            {0.4292, 1.3969},  // INCL
-            {0.4111, 1.5907}  // G4
-        },
-        // SumGamma (exponential: intercept*exp(KE^exp * slope) + floor)
-        {
-            {-0.9028, 0.7306, 0.0000, 1.0000},  // hA
-            {-0.6253, 0.7244, 0.0000, 1.0000},  // hN
-            {-5.6058, 4.4220, 0.0000, 1.0000},  // INCL
-            {-7.7269, 5.6687, 0.0000, 1.0000}  // G4
-        }
-    };
-    nucleonFitParams[1000080160] = {  // O16
-        // DifMean (Difference Mean)
-        {
-            {0.5969, 1.1537},  // hA
-            {0.2018, 1.2612},  // hN
-            {0.3277, 1.1343},  // INCL
-            {-1.3469, 2.3772}  // G4
-        },
-        // DifStd (Difference Std)
-        {
-            {0.4093, 1.9114},  // hA
-            {0.0217, 1.6573},  // hN
-            {0.1314, 1.2863},  // INCL
-            {0.1971, 1.4729}  // G4
-        },
-        // SumGamma (exponential: intercept*exp(KE^exp * slope) + floor)
-        {
-            {-0.7918, 0.6834, 0.0000, 1.0000},  // hA
-            {-0.8751, 1.0721, 0.0000, 1.0000},  // hN
-            {-5.7255, 4.6972, 0.0000, 1.0000},  // INCL
-            {-6.4376, 5.0006, 0.0000, 1.0000}  // G4
-        }
-    };
-    nucleonFitParams[1000260560] = {  // Fe56
-        // DifMean (Difference Mean)
-        {
-            {0.0474, 0.6469},  // hA
-            {-0.0670, 0.9154},  // hN
-            {0.2489, 0.8166},  // INCL
-            {-1.7560, 2.1978}  // G4
-        },
-        // DifStd (Difference Std)
-        {
-            {0.7882, 1.9893},  // hA
-            {0.6754, 1.7866},  // hN
-            {0.4306, 1.4387},  // INCL
-            {0.6319, 1.5114}  // G4
-        },
-        // SumGamma (exponential: intercept*exp(KE^exp * slope) + floor)
-        {
-            {-0.9633, 0.7441, 0.0000, 1.0000},  // hA
-            {-0.6125, 0.6577, 0.0000, 1.0000},  // hN
-            {-5.0279, 4.0393, 0.0000, 1.0000},  // INCL
-            {-6.5398, 4.9023, 0.0000, 1.0000}  // G4
-        }
-    };
-}
-
-// ============================================================
-// Pion: PDG 211 (pi+), -211 (pi-), 111 (pi0)
-// ============================================================
-// Probe PDG: 211
-
-struct PionTargetParams {
-    ModelParamsLinear DifMean;
-    ModelParamsLinear DifStd;
-    ModelParamsLinear SumMean;
-    ModelParamsLinear SumStd;
-};
-
-std::map<int, PionTargetParams> pionFitParams;
-
-void makePionParams() {
-    pionFitParams[1000060120] = {  // C12
-        // DifMean (Difference Mean)
-        {
-            {2.9002, 1.7511},  // hA
-            {-0.1257, 2.3318},  // hN
-            {0.1201, 2.2436},  // INCL
-            {-0.2030, 2.1775}  // G4
-        },
-        // DifStd (Difference Std)
-        {
-            {-0.1002, 3.7254},  // hA
-            {-0.0056, 1.3204},  // hN
-            {-0.1042, 1.0109},  // INCL
-            {0.1389, 0.9416}  // G4
-        },
-        // SumMean (Sum Mean)
-        {
-            {1.0699, 4.1030},  // hA
-            {2.0520, 4.8404},  // hN
-            {1.2387, 3.4527},  // INCL
-            {0.7994, 1.9895}  // G4
-        },
-        // SumStd (Sum Std)
-        {
-            {0.6212, 0.8323},  // hA
-            {0.3243, 3.2116},  // hN
-            {0.9083, 1.3591},  // INCL
-            {1.2666, 2.7622}  // G4
-        },
-    };
-    pionFitParams[1000180400] = {  // Ar40
-        // DifMean (Difference Mean)
-        {
-            {2.2903, 0.8905},  // hA
-            {-0.6633, 1.4800},  // hN
-            {-0.4752, 1.1072},  // INCL
-            {-1.0096, 1.3981}  // G4
-        },
-        // DifStd (Difference Std)
-        {
-            {0.2987, 3.2604},  // hA
-            {0.3182, 2.2811},  // hN
-            {0.7081, 1.2767},  // INCL
-            {0.2957, 1.3652}  // G4
-        },
-        // SumMean (Sum Mean)
-        {
-            {3.7611, 4.9256},  // hA
-            {6.6766, 7.1275},  // hN
-            {4.9647, 1.8701},  // INCL
-            {8.6358, 1.7998}  // G4
-        },
-        // SumStd (Sum Std)
-        {
-            {2.1374, 1.6616},  // hA
-            {1.2266, 4.5166},  // hN
-            {3.7494, 2.4962},  // INCL
-            {1.4930, 3.0141}  // G4
-        },
-    };
-    pionFitParams[1000080160] = {  // O16
-        // DifMean (Difference Mean)
-        {
-            {2.8132, 1.9100},  // hA
-            {-0.0463, 2.1889},  // hN
-            {0.1818, 2.1437},  // INCL
-            {-0.1161, 2.2395}  // G4
-        },
-        // DifStd (Difference Std)
-        {
-            {-0.1951, 3.9639},  // hA
-            {0.0106, 1.5698},  // hN
-            {0.0372, 1.0794},  // INCL
-            {0.1149, 1.0644}  // G4
-        },
-        // SumMean (Sum Mean)
-        {
-            {1.4981, 4.2037},  // hA
-            {3.2590, 5.0669},  // hN
-            {1.8017, 2.9937},  // INCL
-            {2.5676, 3.1655}  // G4
-        },
-        // SumStd (Sum Std)
-        {
-            {0.9073, 0.9469},  // hA
-            {0.7763, 3.4013},  // hN
-            {0.8655, 1.4225},  // INCL
-            {1.0681, 2.2491}  // G4
-        },
-    };
-    pionFitParams[1000260560] = {  // Fe56
-        // DifMean (Difference Mean)
-        {
-            {1.8171, 0.9453},  // hA
-            {-0.7655, 1.6732},  // hN
-            {-0.6367, 1.9307},  // INCL
-            {-0.6924, 2.2437}  // G4
-        },
-        // DifStd (Difference Std)
-        {
-            {0.3591, 3.3994},  // hA
-            {0.6809, 2.3669},  // hN
-            {0.7452, 1.2930},  // INCL
-            {0.3858, 1.4334}  // G4
-        },
-        // SumMean (Sum Mean)
-        {
-            {5.0295, 5.7037},  // hA
-            {9.1261, 6.7006},  // hN
-            {5.6704, 3.6514},  // INCL
-            {10.2044, 1.6007}  // G4
-        },
-        // SumStd (Sum Std)
-        {
-            {2.5278, 2.2597},  // hA
-            {1.7786, 4.6312},  // hN
-            {1.6104, 2.1473},  // INCL
-            {2.0127, 2.6716}  // G4
-        },
-    };
-}
-
+#include <map>
+#include <variant>
 void normalizePerEnergy(TH2D* h)
 {
     int nX = h->GetNbinsX();
@@ -296,11 +37,11 @@ void normalizePerEnergy(TH2D* h)
         }
     }
 }
-TH2* getHist(std::string reweightModel, int pdg, std::string particle) { // get histogram from the TTree (e.g. gst/ginuke file)
+TH2* getHist(std::string reweightModel, int pdg, std::string particle, int target) { // get histogram from the TTree (e.g. gst/ginuke file)
 
   const int nummax = 99;
-
-
+        TFile* f2=TFile::Open("FSI_KOAbs_Mult_reweight_template.root","READ");
+    TFile* f3 = TFile::Open("FSI_KOAbs_Diff_reweight_template.root", "READ");
     int eBiasBins=25;
     Float_t vEdges[26];
     vEdges[0]=-1;
@@ -322,11 +63,11 @@ TH2* getHist(std::string reweightModel, int pdg, std::string particle) { // get 
     binEdges[0]  = v[0]  - (binEdges[1]  - v[0]);
     binEdges[40] = v[39] + (v[39] - binEdges[39]);
     //TH2D* h_KEini_Ebias = new TH2D(Form("%s_%s",simulation.c_str(),particle.c_str()), "Ebias vs KEini; KEini [GeV]; Relative Ebias", bins, binEdges, eBiasBins, vEdges);
-    TH2D* h_KEini_Ebias = new TH2D(Form("%s_%s_KEini_vs_Ebias", reweightModel.c_str(), particle.c_str()), Form("%s_%s_KEini_vs_Ebias", reweightModel.c_str(), particle.c_str()), 40, 0, 2, 20, -1, 1);
+    TH2D* h_KEini_Ebias = new TH2D(Form("rw%s_%s_%d_KEini_vs_Ebias", reweightModel.c_str(), particle.c_str(),target), Form("rw%s_%s_%d_KEini_vs_Ebias", reweightModel.c_str(), particle.c_str(),target), 40, 0, 2, 20, -1, 1);
 
     TH2D* hist;
     for (int i=1; i<40; i++){
-    TFile* file = new TFile(Form("$PSCRATCH/hadronFiles/%s_1000180400_%gGeV_hA2018_100k.ginuke.root",particle.c_str(),v.at(i) ));
+    TFile* file = new TFile(Form("$PSCRATCH/hadronFiles/%s_%d_%gGeV_hA2018_100k.ginuke.root",particle.c_str(),target,v.at(i) ));
 
 
 
@@ -368,7 +109,7 @@ TH2* getHist(std::string reweightModel, int pdg, std::string particle) { // get 
     int probe=pdg;
     // fill histograms
         double thresh=0.005;
-        bool compound=0;
+        bool compound=1;
     for (int i=0; i<tree->GetEntries(); ++i) {
       tree->GetEntry(i);
        int    mult   = 0;
@@ -505,79 +246,18 @@ TH2* getHist(std::string reweightModel, int pdg, std::string particle) { // get 
       
       if ( (fsi==5 || fsi==6) && fsi!=7 && KEini>0&&KEini<20) { // selections (e.g. exclusive channel & KE range)
 
-    double hAEst=0;
-    double AltEst=0;
-    if (pdg<300){
-    const auto& tp = pionFitParams.at(1000180400);
+int max=40;
+ double hAEst=1;
+    double AltEst=1;
 
-        const LinearParams& altSumMean = (reweightModel=="hN2018") ? tp.SumMean.hN   :
-                                         (reweightModel=="HG4BertCasc")  ? tp.SumMean.G4   :
-                                                                       tp.SumMean.INCL;
-        const LinearParams& altSumStd  = (reweightModel=="hN2018") ? tp.SumStd.hN    :
-                                         (reweightModel=="HG4BertCasc")  ? tp.SumStd.G4    :
-                                                                       tp.SumStd.INCL;
+     bool isPion = (probe==211 || probe==-211 || probe==111);
 
-        double meanAltSum = altSumMean.slope * KEini + altSumMean.intercept;
-        double stdAltSum  = altSumStd.slope  * KEini + altSumStd.intercept;
-        double meanhASum  = tp.SumMean.hA.slope * KEini + tp.SumMean.hA.intercept;
-        double stdhASum   = tp.SumStd.hA.slope  * KEini + tp.SumStd.hA.intercept;
-
-
-
-        const LinearParams& altDifMean = (reweightModel=="hN2018") ? tp.DifMean.hN   :
-                                         (reweightModel=="HG4BertCasc")  ? tp.DifMean.G4   :
-                                                                       tp.DifMean.INCL;
-        const LinearParams& altDifStd  = (reweightModel=="hN2018") ? tp.DifStd.hN    :
-                                         (reweightModel=="HG4BertCasc")  ? tp.DifStd.G4    :
-                                                                       tp.DifStd.INCL;
-
-        double meanAltDif = altDifMean.slope * KEini + altDifMean.intercept;
-        double stdAltDif  = altDifStd.slope  * KEini + altDifStd.intercept;
-        double meanhADif  = tp.DifMean.hA.slope * KEini + tp.DifMean.hA.intercept;
-        double stdhADif   = tp.DifStd.hA.slope  * KEini + tp.DifStd.hA.intercept;
-
-        double hAEstSum  = TMath::Gaus(mult, meanhASum,  stdhASum,  1);
-        double AltEstSum = TMath::Gaus(mult, meanAltSum, stdAltSum, 1);
-        double hAEstDif  = TMath::Gaus(diff, meanhADif,  stdhADif,  1);
-        double AltEstDif = TMath::Gaus(diff, meanAltDif, stdAltDif, 1);
-        hAEst=hAEstSum*hAEstDif; AltEst=AltEstSum*AltEstDif;
-    
-    }
-    else{
-
-
-        const auto& tp = nucleonFitParams.at(1000180400);
-
-        const GammaParams& altGamma = (reweightModel=="hN2018") ? tp.SumGamma.hN   :
-                                      (reweightModel=="HG4BertCasc")  ? tp.SumGamma.G4   :
-                                                                   tp.SumGamma.INCL;
-
-            const LinearParams& altDifMean = (reweightModel=="hN2018") ? tp.DifMean.hN   :
-                                         (reweightModel=="HG4BertCasc")  ? tp.DifMean.G4   :
-                                                                       tp.DifMean.INCL;
-        const LinearParams& altDifStd  = (reweightModel=="hN2018") ? tp.DifStd.hN    :
-                                         (reweightModel=="HG4BertCasc")  ? tp.DifStd.G4    :
-                                                                       tp.DifStd.INCL;
-
-        double gammaAlt = altGamma.intercept * TMath::Exp(TMath::Power(KEini, altGamma.exp) * altGamma.slope) + altGamma.floor;
-        double gammaHA  = tp.SumGamma.hA.intercept * TMath::Exp(TMath::Power(KEini, tp.SumGamma.hA.exp) * tp.SumGamma.hA.slope) + tp.SumGamma.hA.floor;
-        double hAEstSum  = TMath::Exp(-(mult - 3) * gammaHA);
-        double AltEstSum = TMath::Exp(-(mult - 3) * gammaAlt);
-
-
-
-        double meanAltDif = altDifMean.slope * KEini + altDifMean.intercept;
-        double stdAltDif  = altDifStd.slope  * KEini + altDifStd.intercept;
-        double meanhADif  = tp.DifMean.hA.slope * KEini + tp.DifMean.hA.intercept;
-        double stdhADif   = tp.DifStd.hA.slope  * KEini + tp.DifStd.hA.intercept;
-
-        double hAEstDif  = TMath::Gaus(diff, meanhADif,  stdhADif,  1);
-        double AltEstDif = TMath::Gaus(diff, meanAltDif, stdAltDif, 1);
-        hAEst=hAEstSum*hAEstDif; AltEst=AltEstSum*AltEstDif;
-    }
-    double rw     = (hAEst > 0) ? AltEst / hAEst : 1.0;
-    if(rw<0.01) rw=0.01; if (rw>100) rw=100;
-
+            computeMultDiffWeights(pdg, target, mult, diff, KEini, max,
+                                   reweightModel, isPion,
+                                   hAEst, AltEst);
+ 
+            double rw = (AltEst / hAEst);
+         
         
         double Ebias;
         if (pdg==2212 || pdg==2112)
@@ -585,9 +265,10 @@ TH2* getHist(std::string reweightModel, int pdg, std::string particle) { // get 
         else if (pdg==211 || pdg==111 || pdg==-211)
           Ebias = (Eini - Ehad) / Eini;
         //h_Ebias->Fill(Ebias);
-        h_KEini_Ebias->Fill(KEini, Ebias,rw);
+        h_KEini_Ebias->Fill(KEini,  Ebias,rw);
       }
     }
+     file->Close();
 
     }
     
@@ -595,9 +276,9 @@ TH2* getHist(std::string reweightModel, int pdg, std::string particle) { // get 
   return h_KEini_Ebias;
 }
 
-void buildTemplate(int pdg=211) {
+void buildTemplate(int pdg=211, int target=1000180400) {
 
-  TH3 *hA2018_hist, *hN2018_hist, *INCL_hist, *G4BC_hist;
+  TH2 *hA2018_hist, *hN2018_hist, *INCL_hist, *G4BC_hist;
   string particle;
 
     if (pdg == 2212) particle = "protonPlus";
@@ -605,9 +286,9 @@ void buildTemplate(int pdg=211) {
     else if (pdg == 211) particle = "piPlus";
     else if (pdg == 111) particle = "pi0";
     else if (pdg == -211) particle = "piMinus";
-    hN2018_hist = (TH3*)getHist(Form("hN2018"), pdg, particle);
-    INCL_hist = (TH3*)getHist(Form("HINCL"), pdg, particle);
-    G4BC_hist = (TH3*)getHist(Form("HG4BertCasc"), pdg, particle);
+    hN2018_hist = (TH2*)getHist(Form("hN2018"), pdg, particle,target);
+    INCL_hist = (TH2*)getHist(Form("HINCL"), pdg, particle,target);
+    G4BC_hist = (TH2*)getHist(Form("HG4BertCasc"), pdg, particle,target);
   
   
   
@@ -640,32 +321,43 @@ void buildTemplate(int pdg=211) {
   hN2018_hist->GetZaxis()->SetRangeUser(0,0.5);
   hN2018_hist->Draw("colz");
 
-  cc1->Print(Form("RW2hN2018_%s_Ebias.png",particle.c_str()) );
+  cc1->Print(Form("RW2hN2018_%s_%d_Ebias.png",particle.c_str(),target) );
   INCL_hist->GetZaxis()->SetRangeUser(0,0.5);
 
   INCL_hist->Draw("colz");
-  cc1->Print(Form("RW2INCL_%s_Ebias.png",particle.c_str()) );
+  cc1->Print(Form("RW2INCL_%s_%d_Ebias.png",particle.c_str(),target) );
   G4BC_hist->GetZaxis()->SetRangeUser(0,0.5);
 
   G4BC_hist->Draw("colz");
-  cc1->Print(Form("RW2G4BC_%s_Ebias.png",particle.c_str()) );
-    if (pdg == 2212) particle = "proton";
-    else if (pdg == 2112) particle = "neutron";
-    else if (pdg == 211) particle = "pionp";
-    else if (pdg == 111) particle = "pion0";
-    else if (pdg == -211) particle = "pionm";
-  TFile *outfile = new TFile("FSI_KOAbs_hA2018rwNucl_templates.root","UPDATE");
-  hN2018_hist->Write(Form("rwhN2018_%s_KEini_vs_Ebias", particle.c_str()));
-  INCL_hist->Write(Form("rwINCL++_%s_KEini_vs_Ebias", particle.c_str()));
-  G4BC_hist->Write(Form("rwGeant4_%s_KEini_vs_Ebias", particle.c_str()));
+  cc1->Print(Form("RW2G4BC_%s_%d_Ebias.png",particle.c_str(),target) );
+
+  hN2018_hist->SetName(Form("rwhN2018_%s_%d_KEini_vs_Ebias", particle.c_str(),target));
+  INCL_hist->SetName(Form("rwINCL++_%s_%d_KEini_vs_Ebias", particle.c_str(),target));
+  G4BC_hist->SetName(Form("rwGeant4_%s_%d_KEini_vs_Ebias", particle.c_str(),target));
+
+  hN2018_hist->SetTitle(Form("rwhN2018_%s_%d_KEini_vs_Ebias", particle.c_str(),target));
+  INCL_hist->SetTitle(Form("rwINCL++_%s_%d_KEini_vs_Ebias", particle.c_str(),target));
+  G4BC_hist->SetTitle(Form("rwGeant4_%s_%d_KEini_vs_Ebias", particle.c_str(),target));
+
+  TFile *outfile = new TFile("FSI_KOAbs_Evis_reweight_template.root","UPDATE");
+  hN2018_hist->Write(Form("rwhN2018_%s_%d_KEini_vs_Ebias", particle.c_str(),target));
+  INCL_hist->Write(Form("rwINCL++_%s_%d_KEini_vs_Ebias", particle.c_str(),target));
+  G4BC_hist->Write(Form("rwGeant4_%s_%d_KEini_vs_Ebias", particle.c_str(),target));
 
   outfile->Write();  outfile->Close(); }
 void buildTemplateforEbiaswNuclRW(){
-    makePionParams();
-    makeNucleonParams();
-buildTemplate(211);
+makeAllParams();
+buildTemplate(211,1000060120);
+buildTemplate(-211,1000060120);
+buildTemplate(111,1000060120);
+buildTemplate(2212,1000060120);
+buildTemplate(2112,1000060120);
+buildTemplate(211,1000180400);
+buildTemplate(-211,1000180400);
+buildTemplate(111,1000180400);
+buildTemplate(2212,1000180400);
+buildTemplate(2112,1000180400);
 
-buildTemplate(2212);
 
 
 
